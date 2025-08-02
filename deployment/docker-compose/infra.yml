@@ -1,6 +1,26 @@
+# This is a corrected docker-compose.yml file that includes the necessary volume
+# mount for Jenkins to be able to use the host's Docker daemon.
 version: "3.8"
 name: 'spring-boot-microservicees'
+
 services:
+  jenkins:
+    image: myjenkins-blueocean:2.516.1-1
+    container_name: jenkins-blueocean
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    # This volume mount is the key to solving the Docker-in-Docker issue.
+    # It exposes the host's Docker socket to the Jenkins container, allowing
+    # Jenkins to communicate with the Docker daemon and start other containers.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins_home:/var/jenkins_home
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+
   catalog-db:
     image: postgres:16-alpine
     container_name: catalog-db
@@ -20,27 +40,6 @@ services:
         limits:
           memory: 500m
 
-  jenkins:
-    image: jenkins/jenkins:lts-jdk21
-    container_name: jenkins-blueocean
-    user: root
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
-    deploy:
-      resources:
-        limits:
-          memory: 1g
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/login"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
 volumes:
   jenkins_home:
+    driver: local
