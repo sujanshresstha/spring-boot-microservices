@@ -11,9 +11,6 @@ pipeline {
                 checkout scm
 
                 dir("${env.WORKING_DIRECTORY}") {
-                    tool name: 'Java-21-Oracle', type: 'hudson.model.JDK'
-
-                    // Run the Maven build command.
                     sh './mvnw -ntp verify'
                 }
             }
