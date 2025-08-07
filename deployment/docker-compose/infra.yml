@@ -5,6 +5,7 @@ services:
   jenkins:
     image: myjenkins-blueocean:2.516.1-1
     container_name: jenkins-blueocean
+    privileged: true # Add this line 👈
     ports:
       - "8080:8080"
       - "50000:50000"
