@@ -1,25 +1,23 @@
 version: "3.8"
-name: 'spring-boot-microservicees'
 
 services:
   jenkins:
     image: myjenkins-blueocean:2.516.1-1
     container_name: jenkins-blueocean
-    privileged: true # Add this line 👈
+    privileged: true
     user: "jenkins:$(id -g docker)"
     ports:
       - "8080:8080"
       - "50000:50000"
-    # This volume mount is the key to solving the Docker-in-Docker issue.
-    # It exposes the host's Docker socket to the Jenkins container, allowing
-    # Jenkins to communicate with the Docker daemon and start other containers.
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # <--- This is the key fix
+      - /var/run/docker.sock:/var/run/docker.sock
       - jenkins_home:/var/jenkins_home
     deploy:
       resources:
         limits:
           memory: 4g
+    networks:
+      - microservices-network
 
   catalog-db:
     image: postgres:16-alpine
@@ -30,6 +28,8 @@ services:
       - POSTGRES_DB=postgres
     ports:
       - "15432:5432"
+    volumes:
+      - catalog_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 10s
@@ -39,7 +39,32 @@ services:
       resources:
         limits:
           memory: 500m
+    networks:
+      - microservices-network
+
+  # Optional: Add more databases for other services
+  # order-db:
+  #   image: postgres:16-alpine
+  #   container_name: order-db
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=orderdb
+  #   ports:
+  #     - "15433:5432"
+  #   volumes:
+  #     - order_db_data:/var/lib/postgresql/data
+  #   networks:
+  #     - microservices-network
 
 volumes:
   jenkins_home:
     driver: local
+  catalog_db_data:
+    driver: local
+  # order_db_data:
+  #   driver: local
+
+networks:
+  microservices-network:
+    driver: bridge
